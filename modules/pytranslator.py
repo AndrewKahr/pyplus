@@ -16,7 +16,8 @@ class PyTranslator():
 
         self.output_files = [cfile.CPPFile("main")]
 
-        self.output_files[self.main_index].functions.append([("int main(int argc, char **argv)", 0)])
+        self.output_files[self.main_index].functions.append(
+                                    [("int main(int argc, char **argv)", 0)])
         self.write_to_function(self.main_index, 0, ("{", 0))
 
         # Flags for inclusions
@@ -37,8 +38,8 @@ class PyTranslator():
             for function in file.functions:
                 for line in function:
                     f.write("\t" * line[1] + line[0] + "\n")
+            f.close()
 
-        f.close()
 
     def write_to_function(self, file_index, function_index, line):
         self.output_files[file_index].functions[function_index].append(line)
@@ -63,10 +64,12 @@ class PyTranslator():
         """
         arg_start_index = (line.find("(") + 1)
         arg_end_index = line.rfind(")")
-        line_tuple = ("std::cout << " + line[arg_start_index:arg_end_index] + " << std::endl;", indent)
+        line_tuple = ("std::cout << " + line[arg_start_index:arg_end_index]
+                      + " << std::endl;", indent)
         self.write_to_function(file_index, function_index, line_tuple)
         if not self.iostream_included:
-            self.write_to_include(file_index, function_index, ("#include <iostream>", 0))
+            self.write_to_include(file_index, function_index,
+                                  ("#include <iostream>", 0))
             self.iostream_included = True
 
     def interpret_line(self, file_index, function_index, line, indent):
@@ -76,7 +79,8 @@ class PyTranslator():
 
         # check if comment
         if line[0] == '#':
-            self.write_to_function(file_index, function_index, ("//" + line[2:], indent))
+            self.write_to_function(file_index, function_index,
+                                   ("//" + line[2:], indent))
             return
 
         elif self.in_doc_comment:
@@ -90,14 +94,18 @@ class PyTranslator():
             return
 
         else:
-            self.write_to_function(file_index, function_index, ("//TODO: Refactor for C++", indent))
-            self.write_to_function(file_index, function_index, ("//" + line, indent))
+            self.write_to_function(file_index, function_index,
+                                   ("//TODO: Refactor for C++", indent))
+            self.write_to_function(file_index, function_index,
+                                   ("//" + line, indent))
 
     def run(self):
         """
-        Reads the script line by line. At the end of the specified script, it will return.
+        Reads the script line by line. At the end of the specified script,
+        it will return.
         Each line will have leading and trailing whitespaces stripped.
-        If the line begins with a comment, skip to the next line, otherwise pass the line to interpret_line
+        If the line begins with a comment, skip to the next line, otherwise
+        pass the line to interpret_line
         :return:
         """
 

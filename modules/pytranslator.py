@@ -43,7 +43,7 @@ class PyTranslator():
         pass
 
     def interpret_line(self, line, indent):
-        if(len(line) == 0):
+        if len(line) == 0:
             self.output_files[self.main_index].functions[self.main_index].append(("", indent))
             return
 

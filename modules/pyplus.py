@@ -4,7 +4,8 @@ from modules import pytranslator
 def convert(script_path, output_path):
     """
 
-    :param path:
+    :param script_path:
+    :param output_path:
     :return:
     """
 

@@ -1,7 +1,7 @@
-from modules import pyparser
+from modules import pytranslator
 
 
-def convert(path):
+def convert(script_path, output_path):
     """
 
     :param path:
@@ -9,9 +9,11 @@ def convert(path):
     """
 
     # TODO: Error checking
-    script = open(path, "r")
-    pyparser.line_parser(script)
+    script = open(script_path, "r")
+
+    translator = pytranslator.PyTranslator(script, output_path)
+    translator.run()
     script.close()
 
 
-convert("../tests/tester.py")
+convert("../tests/tester.py", "../tests/output/")

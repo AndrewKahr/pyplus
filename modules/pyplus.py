@@ -4,10 +4,10 @@ import os
 
 def convert(script_path, output_path):
     """
-
-    :param script_path:
-    :param output_path:
-    :return:
+    The entry point of the translator. Call this function to translate a
+    python script to C++
+    :param script_path: The relative path to the script to convert
+    :param output_path: The relative path to the directory to output to
     """
 
     # Reference for getting absolute path of relative path file

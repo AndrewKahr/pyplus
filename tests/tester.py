@@ -27,4 +27,10 @@ def print_test():
 def abc(a, y, z):
     print("3342")
     y = 6
-    y = 6
+
+
+class Tester():
+    name = "test"
+
+    def __init__(self, input_var):
+        self.input_var = input_var

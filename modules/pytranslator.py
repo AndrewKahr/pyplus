@@ -1,13 +1,14 @@
 from modules import cppfile as cfile
 from modules import cppfunction as cfun
 from modules import cppvariable as cvar
+import ast
 
 
 class PyTranslator():
     # Index of the main file in the output list
     main_index = 0
 
-    def __init__(self, script, output_path):
+    def __init__(self, script_path, output_path):
         """
         Constructor of a python to C++ translator. This will automatically
         create a main.cpp and main function for code
@@ -15,7 +16,7 @@ class PyTranslator():
         :param output_path: The string representation of the path to the
                             directory where the final file should be written
         """
-        self.script = script
+        self.script_path = script_path
 
         self.output_path = output_path
 
@@ -270,6 +271,12 @@ class PyTranslator():
         line by line until it reaches the end, then it will call
         write_cpp_files to export the code into a cpp file
         """
+
+        # Source: https://www.mattlayman.com/blog/2018/decipher-python-ast/
+        with open(self.script_path, "r") as py_source:
+            tree = ast.parse(py_source.read())
+
+
         last_pyindent = 0
         while True:
             line, pyindent = self.get_line()

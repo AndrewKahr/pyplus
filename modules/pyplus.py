@@ -18,10 +18,12 @@ def convert(script_path, output_path):
     # TODO: Error checking
     script = open(os.path.join(full_path, script_path), "r")
 
-    translator = pytranslator.PyTranslator(script, os.path.join(full_path,
-                                                                output_path))
+    translator = pytranslator.PyTranslator(os.path.join(full_path,
+                                                        script_path),
+                                           os.path.join(full_path,
+                                                        output_path))
     translator.run()
     script.close()
 
 
-# convert("../tests/tester.py", "../tests/output/")
+convert("../tests/tester.py", "../tests/output/")

@@ -9,9 +9,7 @@ class CPPFile():
         :param filename: name to be given to the file
         """
 
-        # Lines of Code stored as tuples consisting of (line, indent count)
-        # of type (string, int)
-        # Includes are just strings
+        # Includes are just strings of name of include file
         self.includes = []
 
         # Stored as a list of CPPFunction objects

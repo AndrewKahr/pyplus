@@ -4,13 +4,12 @@ class CPPVariable():
     types = {"int": "int ", "float": "double ", "None": "NULL",
              "char **": "char **", "void": "void ", "auto": "auto "}
 
-    def __init__(self, name, line_index, var_type="auto", list_dims=0,
+    def __init__(self, name, line_num, var_type="auto", list_dims=0,
                  is_list=False, list_type=""):
         """
         Represents a C++ variable converted from python
         :param name: Name of the variable
-        :param line_index: Index of the variable declaration in the lines list
-                           from the owning function
+        :param line_num: line number this variable was assigned on in python
         :param var_type: The type of the variable in python
         :param list_dims: How many dimensions the list is, only applicable if
                           the variable is of a list type
@@ -19,11 +18,11 @@ class CPPVariable():
         """
         self.name = name
 
-        #
-        # CPPFunction class
-        self.line_index = line_index
+        self.line_num = line_num
 
-        self.var_type = var_type
+        # We use a list here to get a mutable type so that a change to one
+        # linked variable will reflect the change across all objects
+        self.var_type = [var_type]
 
         self.is_list = is_list
 

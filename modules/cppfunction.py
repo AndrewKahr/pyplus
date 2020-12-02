@@ -13,9 +13,10 @@ class CPPFunction():
         # Dictionary of {Variable Name : CPPVariable Object}
         self.parameters = parameters
 
-        # Lines in a function stored as lists of tuples consisting of
-        # (line, indent count) of type (string, int)
-        self.lines = []
+        # Lines in a function stored as a dictionary of format
+        # {LineNumber : CPPCodeLine} where line number is the line number
+        # in the python script
+        self.lines = {}
 
         # Provides a lookup table for variables declared in the scope,
         # allowing for type updates as the file is parsed
@@ -30,3 +31,6 @@ class CPPFunction():
 
         # A place to store the function signature during output phase
         self.signature = ""
+
+    def get_signature(self):
+        pass

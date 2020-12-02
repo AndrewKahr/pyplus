@@ -1,6 +1,8 @@
 from modules import cppfile as cfile
 from modules import cppfunction as cfun
 from modules import cppvariable as cvar
+from modules import cppcodeline as cline
+from modules import pyanalyzer
 import ast
 
 
@@ -31,7 +33,7 @@ class PyTranslator():
         main_function.return_type = "int"
 
         self.output_files[self.main_index].functions.append(main_function)
-        self.write_to_function(self.main_index, self.main_index, ("{", 0))
+        # self.write_to_function(self.main_index, self.main_index, ("{", 0))
 
     def create_function_signature(self, function):
         """
@@ -272,10 +274,19 @@ class PyTranslator():
         write_cpp_files to export the code into a cpp file
         """
 
+        # Index for main file and main function
+        file_index = 0
+        function_index = 0
+
+        # All the code will start with 1 tab indent
+        indent = 1
+
         # Source: https://www.mattlayman.com/blog/2018/decipher-python-ast/
         with open(self.script_path, "r") as py_source:
             tree = ast.parse(py_source.read())
 
+        analyzer = pyanalyzer.PyAnalyzer(self.output_files)
+        analyzer.analyze_tree(tree, file_index, function_index, indent)
 
         last_pyindent = 0
         while True:

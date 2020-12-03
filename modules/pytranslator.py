@@ -284,8 +284,10 @@ class PyTranslator():
         # Source: https://www.mattlayman.com/blog/2018/decipher-python-ast/
         with open(self.script_path, "r") as py_source:
             tree = ast.parse(py_source.read())
+            py_source.seek(0)
+            all_lines = py_source.read().splitlines()
 
-        analyzer = pyanalyzer.PyAnalyzer(self.output_files)
+        analyzer = pyanalyzer.PyAnalyzer(self.output_files, all_lines)
         analyzer.analyze_tree(tree, file_index, function_index, indent)
 
         last_pyindent = 0

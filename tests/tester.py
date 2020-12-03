@@ -4,16 +4,26 @@ print("hello")
 # Useful Comment Test
 print("hello2")
 
-x = 5.21234234435435345345345345
+x = 5
 m = x
 q = 1 < 3
 v = 3 + x
-t = (3 + 5) + v + ((3 + 2) + x) # (((3+5)+v)+((3+2)+x))
+t = (3 + 5) + v / ((3 + 2) + x)  # (((3+5)+v)+((3+2)+x))
 x = b = 3
+if x:
+    print("hi")
 
-if x < 6 and 3 > 5:
+if not (x or m):
+    print("hi")
+
+if 0 < x < 5 < 8:
+    print("in range")
+
+if x < 6 and 3 > 5 and 2 < 5 or 3 > 5:
     if x == b:
         print("True")
+    else:
+        print("not true")
     print("Both")
 elif x > 8:
     print("Else")

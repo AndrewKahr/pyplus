@@ -8,7 +8,11 @@ x = 5
 m = x
 q = 1 < 3
 v = 3 + x
-t = (3 + 5) + v / ((3 + 2) + x)  # (((3+5)+v)+((3+2)+x))
+t = (3 + 5) + v / ((3 + 2) + x)
+v = 8
+x = v
+t = 3.2
+
 x = b = 3
 if x:
     print("hi")
@@ -19,6 +23,9 @@ if not (x or m):
 if 0 < x < 5 < 8:
     print("in range")
 
+if x < 4 \
+    and m > 3:
+    print("test")
 if x < 6 and 3 > 5 and 2 < 5 or 3 > 5:
     if x == b:
         print("True")

@@ -125,8 +125,17 @@ class PyAnalyzer(ast.NodeVisitor):
     def parse_Expr(self, node, file_index, function_index, indent):
         print("expr")
 
+    def parse_Call(self, node, file_index, function_index, indent):
+        # Reached a function, so we can just pull the name and args out
+        print(node.func.id)
+        print(node.args)
+
     def parse_Assign(self, node, file_index, function_index, indent):
         function_ref = self.output_files[file_index].functions[function_index]
+
+        if len(node.targets) > 1:
+            self.parse_unhandled(node, file_index, function_index, indent)
+            return
         var_name = node.targets[0].id
         try:
             assign_str, assign_type = self.recurse_operator(node.value,
@@ -213,7 +222,7 @@ class PyAnalyzer(ast.NodeVisitor):
         operator = node.op.__class__.__name__
         if operator in PyAnalyzer.operator_map:
             if operator == "Pow":
-                self.add_include_file("math.h", file_index)
+                self.output_files[file_index].add_include_file("math.h")
                 return_expr = "pow(" + left_str + ", " + right_str + ")"
                 return_type = "float"
 
@@ -326,6 +335,7 @@ class PyAnalyzer(ast.NodeVisitor):
             # Anything we don't handle
             raise ppex.TranslationNotSupported()
 
+    # Helper methods
     def find_var_type(self, name, file_index, function_index):
         """
         Finds the type of a variable in a given context
@@ -342,13 +352,3 @@ class PyAnalyzer(ast.NodeVisitor):
             return function_ref.variables[name].var_type
         else:
             raise ppex.VariableNotFound()
-
-    def add_include_file(self, name, file_index):
-        if name not in self.output_files[file_index].includes:
-            self.output_files[file_index].includes.append(name)
-
-    def parse_Call(self, node, file_index, function_index, indent):
-
-        # Reached a function, so we can just pull the name and args out
-        print(node.func.id)
-        print(node.args)

@@ -16,3 +16,25 @@ class CPPFile():
         self.functions = []
 
         self.filename = filename
+
+    def add_include_file(self, file):
+        if file not in self.includes:
+            self.includes.append(file)
+
+    def get_formatted_file_text(self):
+        return_str = ""
+
+        # We start with include files
+        for file in self.includes:
+            return_str += "#include <" + file + ">\n"
+
+        # Now put in forward declarations
+        # Skip main since it doesn't need a forward declaration
+        for index in range(1, len(self.functions)):
+            return_str += self.functions[index].get_signature() + ";\n"
+
+        # Now we put in all of the functions for the file
+        for function in self.functions:
+            return_str += function.get_formatted_function_text() + "\n"
+
+        return return_str

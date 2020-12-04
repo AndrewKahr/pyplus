@@ -1,8 +1,11 @@
 class CPPVariable():
 
     # Using redundant mapping to allow for changes to mapped type
-    types = {"int": "int ", "float": "double ", "None": "NULL",
-             "char **": "char **", "void": "void ", "auto": "auto "}
+    types = {
+             "int": "int ", "float": "double ", "str": "std::string ",
+             "bool": "bool ", "None": "NULL", "char **": "char **",
+             "void": "void ", "auto": "auto "
+             }
 
     def __init__(self, name, line_num, var_type="auto", list_dims=0,
                  is_list=False, list_type=""):

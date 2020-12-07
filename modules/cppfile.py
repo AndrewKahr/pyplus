@@ -18,10 +18,21 @@ class CPPFile():
         self.filename = filename
 
     def add_include_file(self, file):
+        """
+        Adds the provided include file to the current cpp file if it doesn't
+        already exist
+
+        :param str file: Name of the include file to add
+        """
         if file not in self.includes:
             self.includes.append(file)
 
     def get_formatted_file_text(self):
+        """
+        Generates the text representing the entire C++ file
+
+        :return: A string holding all of the text of the C++ file
+        """
         return_str = ""
 
         # We start with include files

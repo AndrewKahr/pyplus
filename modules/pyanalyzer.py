@@ -6,12 +6,7 @@ from modules import pyplusexceptions as ppex
 import ast
 
 
-class PyAnalyzer(ast.NodeVisitor):
-    """
-    This class inherits from the ast.NodeVisitor class to override functions
-    for each type of call it parses from the python script. This allows for
-    custom handlers for various types of calls
-    """
+class PyAnalyzer():
     # Helps evaluate type when performing operations on different types
     type_precedence = {"string": 0, "float": 1, "int": 2, "bool": 3}
 
@@ -32,34 +27,31 @@ class PyAnalyzer(ast.NodeVisitor):
                       }
 
     def __init__(self, output_files, raw_lines):
+        """
+        This initializes an object that will recurse through an AST to convert
+        python code text to objects representing C++ code
 
+        :param output_files: List of cppfiles where the analyzer should place
+                             cppfile objects/data
+        :param raw_lines: List of strings representing the entire python script
+                          line by line, unmodified from the source
+        """
         # Saves a reference to the output_files list from the translator class
         self.output_files = output_files
 
         self.raw_lines = raw_lines
-
-        # Indices to track where to put parsed code
-        # When they need to be changed, the function changing it will save
-        # its current value, change the values, then once the recursion
-        # completes, it will return the value to what it originally was
-        # allowing traversal of the files in this recursive manner
-        # self.file_index = 0
-        # self.function_index = 0
-
-        # Minimum indent will be one tab (4 spaces) since code will be inside
-        # functions. Function definitions and other special lines that require
-        # no indentation will handle it on their own
-        # self.indent = 1
 
     def analyze_tree(self, tree, file_index, function_index, indent):
         """
         Accepts an AST node and parses through it recursively. It will
         look in the body field and call the respective functions
         to handle each type
+
         :param tree: An AST created from the python code to be converted
-        :param file_index:
-        :param function_index:
-        :param indent:
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :param int indent: Amount to indent code by
         """
         for node in tree.body:
             print(node.__class__.__name__)
@@ -78,7 +70,14 @@ class PyAnalyzer(ast.NodeVisitor):
         """
         Overridden method to visit an Import node. In our usage, we can't
         translate this, so we will just ignore it and move to the next node
-        :param node: The import node
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :param int indent: Amount to indent lines of code by
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
         """
         print("import")
 
@@ -86,7 +85,14 @@ class PyAnalyzer(ast.NodeVisitor):
         """
         Overridden method to visit an ImportFrom node. In our usage, we can't
         translate this, so we will just ignore it and move to the next node
-        :param node: The import node
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :param int indent: Amount to indent lines of code by
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
         """
         print("importfrom")
 
@@ -131,6 +137,17 @@ class PyAnalyzer(ast.NodeVisitor):
         print(node.args)
 
     def parse_Assign(self, node, file_index, function_index, indent):
+        """
+        Function to parse ast.Assign nodes
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :param int indent: Amount to indent lines of code by
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
+        """
         function_ref = self.output_files[file_index].functions[function_index]
 
         if len(node.targets) > 1:
@@ -173,6 +190,16 @@ class PyAnalyzer(ast.NodeVisitor):
 
     # Operators
     def parse_BoolOp(self, node, file_index, function_index):
+        """
+        Function to parse ast.BoolOp nodes
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
+        """
         internal_return = []
         mixed_types = False
         # Multiple nodes can be chained, so we need to go through all of them
@@ -210,6 +237,17 @@ class PyAnalyzer(ast.NodeVisitor):
         return "(" + return_str + ")", return_type
 
     def parse_BinOp(self, node, file_index, function_index):
+        """
+        Function to parse ast.BinOp nodes
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
+        """
+
         left_str, left_type = self.recurse_operator(node.left,
                                                     file_index,
                                                     function_index)
@@ -259,6 +297,16 @@ class PyAnalyzer(ast.NodeVisitor):
         return "(" + return_expr + ")", return_type
 
     def parse_UnaryOp(self, node, file_index, function_index):
+        """
+        Function to parse ast.UnaryOp nodes
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
+        """
         operator = node.op.__class__
         if operator.__name__ not in PyAnalyzer.operator_map:
             raise ppex.TranslationNotSupported()
@@ -274,6 +322,16 @@ class PyAnalyzer(ast.NodeVisitor):
         return "(" + PyAnalyzer.operator_map[operator] + return_str + ")", return_type
 
     def parse_Compare(self, node, file_index, function_index):
+        """
+        Function to parse ast.Compare nodes
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
+        """
         # Ensure we can do all types of operations present in code line
         for op in node.ops:
             if op.__class__.__name__ not in PyAnalyzer.comparison_map:
@@ -304,6 +362,17 @@ class PyAnalyzer(ast.NodeVisitor):
         return return_str, "bool"
 
     def recurse_operator(self, node, file_index, function_index):
+        """
+        Accepts a node and determines the appropriate handler function to use
+        then passes the parameters to the correct handler function
+
+        :param node: Node to parse
+        :param int file_index: Index of the file this node should be written to
+        :param int function_index: Index of the function this node should be
+                                   written to
+        :raises TranslationNotSupported: Raised if python code cannot be
+                                         translated
+        """
         node_type = node.__class__
         if node_type is ast.BinOp:
             return self.parse_BinOp(node, file_index, function_index)
@@ -339,11 +408,12 @@ class PyAnalyzer(ast.NodeVisitor):
     def find_var_type(self, name, file_index, function_index):
         """
         Finds the type of a variable in a given context
-        :param name: The name of the variable to identify
-        :param file_index: Index of the file for context
-        :param function_index: Index of the function for context
+
+        :param string name: The name of the variable to identify
+        :param int file_index: Index of the file for context
+        :param int function_index: Index of the function for context
+        :raises VariableNotFound:  Raised if the variable isn't in the context
         :return: The list reference containing the variable type
-        :raises VariableNotFound exception if the variable isn't in the context
         """
         function_ref = self.output_files[file_index].functions[function_index]
         if name in function_ref.parameters:

@@ -1,7 +1,6 @@
 from modules import cppfile as cfile
 from modules import cppfunction as cfun
 from modules import cppvariable as cvar
-from modules import cppcodeline as cline
 from modules import pyanalyzer
 import ast
 
@@ -11,7 +10,9 @@ class PyTranslator():
         """
         Constructor of a python to C++ translator. This will automatically
         create a main.cpp and main function for code
-        :param script: The file handle of the python file we are converting
+
+        :param script_path: The string representation of the path to the file
+                            to be converted
         :param output_path: The string representation of the path to the
                             directory where the final file should be written
         """
@@ -41,13 +42,18 @@ class PyTranslator():
         # file outputs from classes in C++
         for file in self.output_files:
             # TODO: Error checking
-            f = open(self.output_path + file.filename + ".cpp", "w")
-            f.write(file.get_formatted_file_text())
-            f.close()
+            try:
+                f = open(self.output_path + file.filename + ".cpp", "w")
+                f.write(file.get_formatted_file_text())
+                f.close()
+            except IOError:
+                print("Error writing file: " + self.output_path
+                      + file.filename + ".cpp")
 
     def print_parser(self, file_index, function_index, line, indent):
         """
         Parses calls to print to convert to the C++ equivalent
+
         :param function_index: Index of the function this line should write to
         :param file_index: Index of the file this line should write to
         :param line: String representation of a line of code
@@ -66,12 +72,17 @@ class PyTranslator():
         pass
 
     def apply_variable_types(self):
-        # Going through every variable in every function to apply types to them
-        # on declaration
+        """
+        Goes through every variable in every function to apply types to them
+        on declaration
+        """
         for file in self.output_files:
             for cfunction in file.functions:
                 for variable in cfunction.variables.values():
-                    cfunction.lines[variable.line_num].code_str = cvar.CPPVariable.types[variable.var_type[0]] + cfunction.lines[variable.line_num].code_str
+                    # Prepend line with variable type to apply type
+                    cfunction.lines[variable.line_num].code_str \
+                        = cvar.CPPVariable.types[variable.var_type[0]] \
+                        + cfunction.lines[variable.line_num].code_str
 
     def run(self):
         """

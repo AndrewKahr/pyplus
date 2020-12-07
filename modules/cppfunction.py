@@ -5,8 +5,13 @@ class CPPFunction():
     def __init__(self, name, lineno, end_lineno, parameters={}):
         """
         Represents a C++ function
-        :param name: The name of the function
-        :param parameters: The parameters this function has passed in
+
+        :param str name: The name of the function
+        :param int lineno: The line where the function is declared in the
+                           python file
+        :param int end_lineno: The line where the function ends in the python
+                               file
+        :param dict parameters: The parameters this function has passed in
         """
         self.name = name
 
@@ -43,6 +48,11 @@ class CPPFunction():
         self.signature = ""
 
     def get_signature(self):
+        """
+        Generates the string representation of this function's signature
+
+        :return: String containing the function's signature
+        """
         # Check if we've already cached the signature
         if self.signature == "":
             function_signature = cvar.CPPVariable.types[self.return_type[0]]
@@ -62,6 +72,11 @@ class CPPFunction():
         return self.signature
 
     def get_formatted_function_text(self):
+        """
+        Generates a string with all of this function's code within it
+
+        :return: String containing all of the function's C++ code
+        """
         return_str = ""
 
         # First line is the function signature

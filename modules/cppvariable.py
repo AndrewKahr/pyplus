@@ -11,13 +11,16 @@ class CPPVariable():
                  is_list=False, list_type=""):
         """
         Represents a C++ variable converted from python
-        :param name: Name of the variable
-        :param line_num: line number this variable was assigned on in python
-        :param var_type: The type of the variable in python
-        :param list_dims: How many dimensions the list is, only applicable if
-                          the variable is of a list type
-        :param is_list: Flag to easily determine if this variable is a list
-        :param list_type: The type of values held within the list
+
+        :param str name: Name of the variable
+        :param int line_num: line number this variable was assigned on in
+                             python
+        :param str var_type: The type of the variable in python
+        :param int list_dims: How many dimensions the list is, only applicable
+                              if the variable is of a list type
+        :param bool is_list: Flag to easily determine if this variable is a
+                             list
+        :param str list_type: The type of values held within the list
         """
         self.name = name
 

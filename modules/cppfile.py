@@ -12,8 +12,8 @@ class CPPFile():
         # Includes are just strings of name of include file
         self.includes = []
 
-        # Stored as a list of CPPFunction objects
-        self.functions = []
+        # Stored as a dictionary of {Function Name: CPPFunction object}
+        self.functions = {}
 
         self.filename = filename
 
@@ -39,13 +39,17 @@ class CPPFile():
         for file in self.includes:
             return_str += "#include <" + file + ">\n"
 
+        return_str += "\n"
+
         # Now put in forward declarations
         # Skip main since it doesn't need a forward declaration
-        for index in range(1, len(self.functions)):
-            return_str += self.functions[index].get_signature() + ";\n"
+        for function_key in list(self.functions.keys())[1:]:
+            return_str += self.functions[function_key].get_signature() + ";\n"
+
+        return_str += "\n"
 
         # Now we put in all of the functions for the file
-        for function in self.functions:
-            return_str += function.get_formatted_function_text() + "\n"
+        for function in self.functions.values():
+            return_str += function.get_formatted_function_text() + "\n\n"
 
         return return_str

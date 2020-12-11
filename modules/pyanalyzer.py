@@ -3,6 +3,7 @@ from modules import cppfunction as cfun
 from modules import cppvariable as cvar
 from modules import cppcodeline as cline
 from modules import pyplusexceptions as ppex
+from modules import portedfunctions as pf
 import ast
 
 
@@ -77,7 +78,7 @@ class PyAnalyzer():
             if index >= default_args_index:
                 default = args.defaults[index-default_args_index]
                 default_type = [type(default.value).__name__]
-                if default_type == "str":
+                if default_type[0] == "str":
                     params[name] = cvar.CPPVariable(name + "=\"" + default.value + "\"",
                                                     -1, default_type)
                 else:
@@ -178,7 +179,7 @@ class PyAnalyzer():
             func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
                                                             node.end_lineno,
                                                             node.end_col_offset,
-                                                            indent, "return")
+                                                            indent, "return;")
         else:
             return_str, return_type = self.recurse_operator(node.value,
                                                             file_index,
@@ -188,7 +189,7 @@ class PyAnalyzer():
                                                             node.end_lineno,
                                                             node.end_col_offset,
                                                             indent,
-                                                            "return " + return_str)
+                                                            "return " + return_str + ";")
 
 
     # Misc
@@ -214,7 +215,7 @@ class PyAnalyzer():
             except ppex.TranslationNotSupported:
                 self.parse_unhandled(node, file_index, function_key, indent)
                 return
-
+            return_str += ";"
         else:
             # Any other type doesn't matter as the work it does wouldn't be
             # saved
@@ -224,7 +225,7 @@ class PyAnalyzer():
         func_ref.lines[node.value.lineno] = cline.CPPCodeLine(node.value.lineno,
                                                               node.value.end_lineno,
                                                               node.end_col_offset,
-                                                              indent, return_str + ";")
+                                                              indent, return_str)
 
     def parse_Assign(self, node, file_index, function_key, indent):
         """
@@ -323,8 +324,7 @@ class PyAnalyzer():
             return_type = function.return_type
         elif func_name in self.ported_functions:
             # TODO: Proper implementation
-            self.parse_ported_function(func_name, arg_list, arg_types)
-            return "", ["None"]
+            return self.parse_ported_function(file_index, function_key, func_name, arg_list, arg_types)
         else:
             raise ppex.TranslationNotSupported()
 
@@ -335,11 +335,26 @@ class PyAnalyzer():
 
         return return_str, return_type
 
-    def parse_ported_function(self, function, args, arg_types):
-        pass
+    def parse_ported_function(self, file_index, function_key, function, args, arg_types):
+        if function == "print":
+            return_str = pf.print_translation(args)
+            return_type = ["None"]
+            self.output_files[file_index].add_include_file("iostream")
+
+        elif function == "sqrt":
+            if len(args) > 2:
+                raise ppex.TranslationNotSupported()
+            return_str = pf.sqrt_translation(args)
+            return_type = ["float"]
+            self.output_files[file_index].add_include_file("math.h")
+
+        return return_str, return_type
 
     def parse_Constant(self, node, file_index, function_key):
-        return str(node.value), [type(node.value).__name__]
+        if type(node.value) is str:
+            return ("\"" + node.value + "\""), [type(node.value).__name__]
+        else:
+            return str(node.value), [type(node.value).__name__]
 
     # Operators
     def parse_BoolOp(self, node, file_index, function_key):

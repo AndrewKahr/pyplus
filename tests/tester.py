@@ -19,7 +19,7 @@ v = 3 + x
 t = (3 + 5) + v / ((3 + 2) + x)
 v = 8
 x = v
-t = 3.2**2
+t = 3.2 ** 2
 
 x = b = 3
 if x:
@@ -81,6 +81,7 @@ class Tester():
         print("hi")
 
 
+print(1)
 tester = Tester(2)
 tester.test()
 x = add(1, 2)

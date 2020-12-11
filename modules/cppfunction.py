@@ -56,13 +56,17 @@ class CPPFunction():
         # Check if we've already cached the signature
         if self.signature == "":
             function_signature = cvar.CPPVariable.types[self.return_type[0]]
-            function_signature += self.name + "("
+            # Convert internally specially named main function to proper name
+            if self.name == "0":
+                function_signature += "main("
+            else:
+                function_signature += self.name + "("
 
             # Check if there are any parameters before attempting to add them
             if len(self.parameters.values()) > 0:
                 for parameter in self.parameters.values():
                     # Prepend the param type in C++ style before the param name
-                    function_signature += cvar.CPPVariable.types[parameter.var_type[0]]
+                    function_signature += cvar.CPPVariable.types[parameter.py_var_type[0]]
                     function_signature += parameter.name + ", "
                 # Remove the extra comma and space
                 function_signature = function_signature[:-2]

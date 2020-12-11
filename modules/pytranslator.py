@@ -25,12 +25,15 @@ class PyTranslator():
 
         # Configuring Default Main Function code
         self.output_files = [cfile.CPPFile("main")]
-        main_params = {"argc": cvar.CPPVariable("argc", 0, "int"),
-                       "argv": cvar.CPPVariable("argv", 0, "char **")}
-        main_function = cfun.CPPFunction("main", -1, -1, main_params)
+        main_params = {"argc": cvar.CPPVariable("argc", -1, ["int"]),
+                       "argv": cvar.CPPVariable("argv", -1, ["char **"])}
+        # We name the function 0 because that is an invalid name in python
+        # Otherwise theres a chance theres a function named main already
+        # At file output, this will be changed to main
+        main_function = cfun.CPPFunction("0", -1, -1, main_params)
         main_function.return_type[0] = "int"
 
-        self.output_files[0].functions.append(main_function)
+        self.output_files[0].functions["0"] = main_function
 
     def write_cpp_files(self):
         """
@@ -77,11 +80,11 @@ class PyTranslator():
         on declaration
         """
         for file in self.output_files:
-            for cfunction in file.functions:
+            for cfunction in file.functions.values():
                 for variable in cfunction.variables.values():
                     # Prepend line with variable type to apply type
                     cfunction.lines[variable.line_num].code_str \
-                        = cvar.CPPVariable.types[variable.var_type[0]] \
+                        = cvar.CPPVariable.types[variable.py_var_type[0]] \
                         + cfunction.lines[variable.line_num].code_str
 
     def run(self):
@@ -91,9 +94,9 @@ class PyTranslator():
         write_cpp_files to export the code into a cpp file
         """
 
-        # Index for main file and main function
+        # Index for main file and key for main function
         file_index = 0
-        function_index = 0
+        function_key = "0"
 
         # All the code will start with 1 tab indent
         indent = 1
@@ -105,7 +108,7 @@ class PyTranslator():
             all_lines = py_source.read().splitlines()
 
         analyzer = pyanalyzer.PyAnalyzer(self.output_files, all_lines)
-        analyzer.analyze_tree(tree, file_index, function_index, indent)
+        analyzer.analyze(tree, file_index, function_key, indent)
 
         self.apply_variable_types()
         self.ingest_comments()

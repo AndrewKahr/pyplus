@@ -53,24 +53,6 @@ class PyTranslator():
                 print("Error writing file: " + self.output_path
                       + file.filename + ".cpp")
 
-    def print_parser(self, file_index, function_index, line, indent):
-        """
-        Parses calls to print to convert to the C++ equivalent
-
-        :param function_index: Index of the function this line should write to
-        :param file_index: Index of the file this line should write to
-        :param line: String representation of a line of code
-                     containing a print statement
-        :param indent: How much to indent a line by
-        """
-        arg_start_index = (line.find("(") + 1)
-        arg_end_index = line.rfind(")")
-        line_tuple = ("std::cout << " + line[arg_start_index:arg_end_index]
-                      + " << std::endl;", indent)
-        self.write_to_function(file_index, function_index, line_tuple)
-        if "iostream" not in self.output_files[file_index].includes:
-            self.write_to_include(file_index, "iostream")
-
     def ingest_comments(self):
         pass
 

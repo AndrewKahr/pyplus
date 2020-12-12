@@ -1,29 +1,34 @@
 class CPPVariable():
 
     # Using redundant mapping to allow for changes to mapped type
-    types = {"int": "int ", "float": "double ", "None": "NULL",
-             "char **": "char **", "void": "void ", "auto": "auto "}
+    types = {
+             "int": "int ", "float": "double ", "str": "std::string ",
+             "bool": "bool ", "None": "NULL", "char **": "char **",
+             "void": "void ", "auto": "auto "
+             }
 
-    def __init__(self, name, line_index, var_type="auto", list_dims=0,
+    def __init__(self, name, line_num, py_var_type=["auto"], list_dims=0,
                  is_list=False, list_type=""):
         """
         Represents a C++ variable converted from python
-        :param name: Name of the variable
-        :param line_index: Index of the variable declaration in the lines list
-                           from the owning function
-        :param var_type: The type of the variable in python
-        :param list_dims: How many dimensions the list is, only applicable if
-                          the variable is of a list type
-        :param is_list: Flag to easily determine if this variable is a list
-        :param list_type: The type of values held within the list
+
+        :param str name: Name of the variable
+        :param int line_num: line number this variable was assigned on in
+                             python
+        :param list py_var_type: The type of the variable in python
+        :param int list_dims: How many dimensions the list is, only applicable
+                              if the variable is of a list type
+        :param bool is_list: Flag to easily determine if this variable is a
+                             list
+        :param str list_type: The type of values held within the list
         """
         self.name = name
 
-        #
-        # CPPFunction class
-        self.line_index = line_index
+        self.line_num = line_num
 
-        self.var_type = var_type
+        # We use a list here to get a mutable type so that a change to one
+        # linked variable will reflect the change across all objects
+        self.py_var_type = py_var_type
 
         self.is_list = is_list
 

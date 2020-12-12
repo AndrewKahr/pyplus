@@ -7,6 +7,8 @@ class CPPVariable():
              "void": "void ", "auto": "auto "
              }
 
+    bool_map = { "True": "true", "False": "false"}
+
     def __init__(self, name, line_num, py_var_type, list_dims=0,
                  is_list=False, list_type=""):
         """

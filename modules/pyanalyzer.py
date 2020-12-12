@@ -424,7 +424,9 @@ class PyAnalyzer():
 
     def parse_Constant(self, node, file_index, function_key):
         if type(node.value) is str:
-            return ("\"" + node.value + "\""), [type(node.value).__name__]
+            return ("\"" + node.value + "\""), ["str"]
+        elif type(node.value) is bool:
+            return cvar.CPPVariable.bool_map[str(node.value)], ["bool"]
         else:
             return str(node.value), [type(node.value).__name__]
 

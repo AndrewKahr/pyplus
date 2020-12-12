@@ -10,7 +10,7 @@ print("hello")
 # Useful Comment Test
 print("hello2")
 
-ab = int(5.4)
+b = int(5.4)
 int(5.4)
 x = 5
 m = x
@@ -22,6 +22,7 @@ x = v
 t = 3.2 ** 2
 
 x = b = 3
+
 if x:
     """
     abc
@@ -41,12 +42,21 @@ if x < 6 and 3 > 5 and 2 < 5 or 3 > 5:
     if x == b:
         print("True")
     else:
+        # else:
+        """ else:
+        else:
+        else: """
         print("not true")
     print("Both")
 elif x > 8:
     print("Else")
 else:
     print("None")
+
+while x:
+    print("hello")
+    break
+    continue
 
 
 def print_test():

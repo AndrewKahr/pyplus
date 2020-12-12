@@ -90,7 +90,7 @@ class PyTranslator():
             all_lines = py_source.read().splitlines()
 
         analyzer = pyanalyzer.PyAnalyzer(self.output_files, all_lines)
-        analyzer.analyze(tree, file_index, function_key, indent)
+        analyzer.analyze(tree.body, file_index, function_key, indent)
 
         self.apply_variable_types()
         self.ingest_comments()

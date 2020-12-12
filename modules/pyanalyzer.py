@@ -1,10 +1,10 @@
+import ast
 from modules import cppfile as cfile
 from modules import cppfunction as cfun
 from modules import cppvariable as cvar
 from modules import cppcodeline as cline
 from modules import pyplusexceptions as ppex
 from modules import portedfunctions as pf
-import ast
 
 
 class PyAnalyzer():
@@ -53,14 +53,14 @@ class PyAnalyzer():
     def pre_analysis(self, tree, file_index, indent):
         # First work through function declarations so we know what calls go to
         # self written functions
-        for node in tree.body:
+        for node in tree:
             if node.__class__ is ast.FunctionDef:
                 self.parse_function_header(node, file_index)
 
         # Now we'll parse the bodies of the functions
-        for node in tree.body:
+        for node in tree:
             if node.__class__ is ast.FunctionDef:
-                self.analyze_tree(node, file_index, node.name, indent)
+                self.analyze_tree(node.body, file_index, node.name, indent)
 
     def parse_function_header(self, node, file_index):
         func_ref = self.output_files[file_index].functions
@@ -102,7 +102,7 @@ class PyAnalyzer():
                                    written to
         :param int indent: Amount to indent code by
         """
-        for node in tree.body:
+        for node in tree:
             # Using strategy found in ast.py built-in module
             handler_name = "parse_" + node.__class__.__name__
             # Will find if the function called handler_name exists, otherwise
@@ -127,7 +127,7 @@ class PyAnalyzer():
         :raises TranslationNotSupported: Raised if python code cannot be
                                          translated
         """
-        print("import")
+        pass
 
     def parse_ImportFrom(self, node, file_index, function_key, indent):
         """
@@ -142,36 +142,97 @@ class PyAnalyzer():
         :raises TranslationNotSupported: Raised if python code cannot be
                                          translated
         """
-        print("importfrom")
+        pass
 
     # Definitions
     def parse_ClassDef(self, node, file_index, function_key, indent):
-        print("classdef")
+        # We won't copy over a class definition as we aren't handling the
+        # conversion
+        pass
 
     # Control Statements
-    def parse_If(self, node, file_index, function_key, indent):
+    def parse_If(self, node, file_index, function_key, indent, if_str="if"):
         # Parse conditions and add in the code to the current function
+        func_ref = self.output_files[file_index].functions[function_key]
+        test_str = self.recurse_operator(node.test, file_index, function_key)[0]
+        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
+                                                        node.end_lineno,
+                                                        node.end_col_offset,
+                                                        indent,
+                                                        if_str + " (" + test_str + ")\n"
+                                                        + indent*cline.CPPCodeLine.tab_delimiter
+                                                        + "{")
 
-        print("if")
+        self.analyze_tree(node.body, file_index, function_key, indent+1)
+        # Get the last codeline and add the closing bracket
+        func_ref.lines[node.body[-1].lineno].code_str += "\n" + indent*cline.CPPCodeLine.tab_delimiter + "}"
+        if len(node.orelse) == 1 and node.orelse[0].__class__ is ast.If:
+            # Else if case
+            self.parse_If(node.orelse[0], file_index, function_key, indent,
+                          "else if")
 
-    def parse_For(self, node, file_index, function_key, indent):
-        print("for")
+        elif len(node.orelse) > 0:
+            # Else case
+            else_lineno, else_end_col_offset = self.find_else_lineno(node.orelse[0].lineno - 2)
+            func_ref.lines[else_lineno] = cline.CPPCodeLine(else_lineno,
+                                                            else_lineno,
+                                                            else_end_col_offset,
+                                                            indent,
+                                                            "else\n"
+                                                            + indent * cline.CPPCodeLine.tab_delimiter
+                                                            + "{")
+            self.analyze_tree(node.orelse, file_index, function_key, indent + 1)
+            # Get the last codeline and add the closing bracket
+            func_ref.lines[node.orelse[-1].lineno].code_str += "\n" + indent * cline.CPPCodeLine.tab_delimiter + "}"
+
+    def find_else_lineno(self, search_index):
+        while search_index > -1:
+            # Check line isn't a comment
+            if self.raw_lines[search_index].lstrip()[0] == "#":
+                search_index -= 1
+                continue
+            else:
+                end_col_offset = self.raw_lines[search_index].find("else:")
+                if end_col_offset < 0:
+                    raise ppex.TranslationNotSupported()
+                else:
+                    end_col_offset += 4
+
+                # Line number is 1+index in list
+                return search_index + 1, end_col_offset
 
     def parse_While(self, node, file_index, function_key, indent):
-        print("while")
-
-    def parse_Try(self, node, file_index, function_key, indent):
-        print("try")
+        func_ref = self.output_files[file_index].functions[function_key]
+        test_str = self.recurse_operator(node.test, file_index, function_key)[0]
+        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
+                                                        node.end_lineno,
+                                                        node.end_col_offset,
+                                                        indent,
+                                                        "while (" + test_str + ")\n"
+                                                        + indent * cline.CPPCodeLine.tab_delimiter
+                                                        + "{")
+        self.analyze_tree(node.body, file_index, function_key, indent + 1)
+        func_ref.lines[node.body[-1].lineno].code_str += "\n" + indent * cline.CPPCodeLine.tab_delimiter + "}"
 
     def parse_Pass(self, node, file_index, function_key, indent):
         # We have nothing to do for a pass call
         pass
 
     def parse_Break(self, node, file_index, function_key, indent):
-        print("break")
+        func_ref = self.output_files[file_index].functions[function_key]
+        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
+                                                        node.end_lineno,
+                                                        node.end_col_offset,
+                                                        indent,
+                                                        "break;")
 
     def parse_Continue(self, node, file_index, function_key, indent):
-        print("continue")
+        func_ref = self.output_files[file_index].functions[function_key]
+        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
+                                                        node.end_lineno,
+                                                        node.end_col_offset,
+                                                        indent,
+                                                        "continue;")
 
     def parse_Return(self, node, file_index, function_key, indent):
         func_ref = self.output_files[file_index].functions[function_key]
@@ -191,7 +252,6 @@ class PyAnalyzer():
                                                             indent,
                                                             "return " + return_str + ";")
 
-
     # Misc
     def parse_Expr(self, node, file_index, function_key, indent):
         func_ref = self.output_files[file_index].functions[function_key]
@@ -201,7 +261,7 @@ class PyAnalyzer():
             if type(node.value.value) is str:
                 # Verify this is a docstring
                 if self.raw_lines[node.value.lineno-1].strip()[0:3] == '"""':
-                    return_str = "/*" + node.value.value + "*/"
+                    return_str = self.convert_docstring(node.value.value, indent)
                 else:
                     self.parse_unhandled(node, file_index, function_key, indent)
                     return
@@ -226,6 +286,19 @@ class PyAnalyzer():
                                                               node.value.end_lineno,
                                                               node.end_col_offset,
                                                               indent, return_str)
+
+    def convert_docstring(self, doc_string, indent):
+        doc_string = doc_string.strip()
+        tab_char = cline.CPPCodeLine.tab_delimiter
+        return_str = "/*\n"
+        while doc_string.find("\n") > -1:
+            doc_string = doc_string.lstrip()
+            return_str += cline.CPPCodeLine.tab_delimiter*indent + doc_string[:doc_string.find("\n")] + "\n"
+            doc_string = doc_string[doc_string.find("\n")+1:]
+
+        doc_string = doc_string.lstrip()
+        return_str += tab_char * indent + doc_string
+        return return_str + "\n" + tab_char*indent + "*/"
 
     def parse_Assign(self, node, file_index, function_key, indent):
         """
@@ -293,7 +366,7 @@ class PyAnalyzer():
         if func_name not in cvar.CPPVariable.types \
             and func_name not in func_ref \
                 and func_name not in self.ported_functions:
-            raise ppex.TranslationNotSupported
+            raise ppex.TranslationNotSupported()
 
         # We track the types passed in to help update parameter types when
         # functions get called
@@ -323,7 +396,6 @@ class PyAnalyzer():
                                                          passed_type)[0]
             return_type = function.return_type
         elif func_name in self.ported_functions:
-            # TODO: Proper implementation
             return self.parse_ported_function(file_index, function_key, func_name, arg_list, arg_types)
         else:
             raise ppex.TranslationNotSupported()
@@ -374,26 +446,26 @@ class PyAnalyzer():
         # Multiple nodes can be chained, so we need to go through all of them
         for internal_node in node.values:
             compare_nodes.append(self.recurse_operator(internal_node,
-                                                         file_index,
-                                                         function_key))
+                                                       file_index,
+                                                       function_key))
 
         # This shouldn't be possible normally, but we check to be safe
-        if len(internal_node) < 2:
+        if len(compare_nodes) < 2:
             raise ppex.TranslationNotSupported()
 
         return_str = ""
         ret_var_type = compare_nodes[0][1][0]
         # Go through all but the last one and create a string separated by
         # the C++ version of the python operator
-        for index in range(len(compare_nodes)-1):
-            if compare_nodes[index][1][0] != ret_var_type:
+        for compare_node in compare_nodes[:-1]:
+            if compare_node[1][0] != ret_var_type:
                 mixed_types = True
-            return_str += (compare_nodes[index][0] +
+            return_str += (compare_node[0] +
                            PyAnalyzer.operator_map[node.op.__class__.__name__])
 
-        if compare_nodes[len(compare_nodes)-1][1] != ret_var_type:
+        if compare_nodes[-1][1][0] != ret_var_type:
             mixed_types = True
-        return_str += compare_nodes[len(compare_nodes)-1][0]
+        return_str += compare_nodes[-1][0]
 
         # Short circuit operators complicate type determination, so if they
         # aren't all the same type, we'll use auto, otherwise these operators
@@ -500,7 +572,7 @@ class PyAnalyzer():
         else:
             return_type = "int"
 
-        return "(" + PyAnalyzer.operator_map[operator] + return_str + ")", [return_type]
+        return "(" + PyAnalyzer.operator_map[operator.__name__] + return_str + ")", [return_type]
 
     def parse_Compare(self, node, file_index, function_key):
         """
@@ -529,16 +601,16 @@ class PyAnalyzer():
                                                file_index,
                                                function_key)[0]
             return_str += "(" + last_comparator \
-                          + PyAnalyzer.comparison_map[node.ops[index-1]] \
+                          + PyAnalyzer.comparison_map[node.ops[index-1].__class__.__name__] \
                           + comparator + ") && "
             last_comparator = comparator
 
-        comparator = self.recurse_operator(node.comparators[len(node.ops)-1],
+        comparator = self.recurse_operator(node.comparators[-1],
                                            file_index,
                                            function_key)[0]
 
         return_str += "(" + last_comparator + \
-                      PyAnalyzer.comparison_map[node.ops[len(node.ops)-1].__class__.__name__] \
+                      PyAnalyzer.comparison_map[node.ops[-1].__class__.__name__] \
                       + comparator + ")"
         return return_str, ["bool"]
 

@@ -41,39 +41,48 @@ class CPPFunction():
         # a related variable
         self.return_type = ["void"]
 
-        # String for the function documentation
-        self.doc_string = ""
+    def get_forward_declaration(self):
+        """
+        Generates the string representation of this function's forward
+        declaration. This is separate from get signature because we don't
+        want to include any default values in the forward declaration
 
-        # We cache the signature since it is requested twice during output
-        self.signature = ""
+        :return string: The function's forward declaration
+        """
+        function_signature = cvar.CPPVariable.types[self.return_type[0]]
+        function_signature += self.name + "("
+
+        if len(self.parameters) > 0:
+            for parameter in self.parameters:
+                function_signature += cvar.CPPVariable.types[self.parameters[parameter].py_var_type[0]]
+                function_signature += parameter + ", "
+            function_signature = function_signature[:-2]
+
+        return function_signature + ")"
 
     def get_signature(self):
         """
         Generates the string representation of this function's signature
 
-        :return: String containing the function's signature
+        :return string: The function's signature
         """
-        # Check if we've already cached the signature
-        if self.signature == "":
-            function_signature = cvar.CPPVariable.types[self.return_type[0]]
-            # Convert internally specially named main function to proper name
-            if self.name == "0":
-                function_signature += "main("
-            else:
-                function_signature += self.name + "("
+        function_signature = cvar.CPPVariable.types[self.return_type[0]]
+        # Convert internally specially named main function to proper name
+        if self.name == "0":
+            function_signature += "main("
+        else:
+            function_signature += self.name + "("
 
-            # Check if there are any parameters before attempting to add them
-            if len(self.parameters.values()) > 0:
-                for parameter in self.parameters.values():
-                    # Prepend the param type in C++ style before the param name
-                    function_signature += cvar.CPPVariable.types[parameter.py_var_type[0]]
-                    function_signature += parameter.name + ", "
-                # Remove the extra comma and space
-                function_signature = function_signature[:-2]
+        # Check if there are any parameters before attempting to add them
+        if len(self.parameters.values()) > 0:
+            for parameter in self.parameters.values():
+                # Prepend the param type in C++ style before the param name
+                function_signature += cvar.CPPVariable.types[parameter.py_var_type[0]]
+                function_signature += parameter.name + ", "
+            # Remove the extra comma and space
+            function_signature = function_signature[:-2]
 
-            self.signature = function_signature + ")"
-
-        return self.signature
+        return function_signature + ")"
 
     def get_formatted_function_text(self):
         """

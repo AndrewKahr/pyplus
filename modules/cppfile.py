@@ -44,7 +44,7 @@ class CPPFile():
         # Now put in forward declarations
         # Skip main since it doesn't need a forward declaration
         for function_key in list(self.functions.keys())[1:]:
-            return_str += self.functions[function_key].get_signature() + ";\n"
+            return_str += self.functions[function_key].get_forward_declaration() + ";\n"
 
         return_str += "\n"
 

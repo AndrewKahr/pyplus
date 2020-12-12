@@ -7,7 +7,7 @@ class CPPVariable():
              "void": "void ", "auto": "auto "
              }
 
-    def __init__(self, name, line_num, py_var_type=["auto"], list_dims=0,
+    def __init__(self, name, line_num, py_var_type, list_dims=0,
                  is_list=False, list_type=""):
         """
         Represents a C++ variable converted from python

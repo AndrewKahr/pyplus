@@ -85,7 +85,7 @@ class PyAnalyzer():
                     params[name] = cvar.CPPVariable(name + "=" + str(default.value),
                                                     -1, default_type)
             else:
-                params[name] = cvar.CPPVariable(name, -1)
+                params[name] = cvar.CPPVariable(name, -1, ["auto"])
 
         func_ref[node.name] = cfun.CPPFunction(node.name, node.lineno,
                                                node.end_lineno, params)

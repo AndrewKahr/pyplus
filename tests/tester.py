@@ -9,7 +9,8 @@ print("hello")
 
 # Useful Comment Test
 print("hello2")
-
+boolean = True
+boolean2 = False
 b = int(5.4)
 int(5.4)
 x = 5

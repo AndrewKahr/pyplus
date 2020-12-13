@@ -12,4 +12,4 @@ def print_translation(args):
 
 def sqrt_translation(args):
 
-    return "sqrt(" + args[0] + ", " + args[1] + ")"
+    return "sqrt(" + args[0] + ")"

@@ -1,5 +1,5 @@
-from modules import pytranslator
 import os
+from modules import pytranslator
 
 
 def convert(script_path, output_path):
@@ -22,4 +22,4 @@ def convert(script_path, output_path):
 
 
 if __name__ == "__main__":
-    convert("examples/tester.py", "output/")
+    convert("examples/example_assignment.py", "output/")

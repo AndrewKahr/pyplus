@@ -33,7 +33,7 @@ class PyAnalyzer():
 
     def __init__(self, output_files, raw_lines):
         """
-        This initializes an object that will recurse through an AST to convert
+        Initializes an object that will recurse through an AST to convert
         python code text to objects representing C++ code
 
         :param output_files: List of cppfiles where the analyzer should place
@@ -115,20 +115,20 @@ class PyAnalyzer():
     def parse_unhandled(self, node, file_index, function_key, indent,
                         reason="TODO: Code not directly translatable, manual port required"):
         func_ref = self.output_files[file_index].functions[function_key]
-        func_ref.lines[node.lineno-1] = cline.CPPCodeLine(node.lineno,
-                                                          node.lineno,
-                                                          node.end_col_offset,
-                                                          indent,
-                                                          "/*" + self.raw_lines[node.lineno-1],
-                                                          "", reason)
-        for index in range(node.lineno, node.end_lineno):
+        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
+                                                        node.lineno,
+                                                        node.end_col_offset,
+                                                        indent,
+                                                        "/*" + self.raw_lines[node.lineno-1],
+                                                        "", reason)
+
+        for index in range(node.lineno+1, node.end_lineno+1):
             func_ref.lines[index] = cline.CPPCodeLine(index,
                                                       index,
                                                       node.end_col_offset,
                                                       indent,
-                                                      self.raw_lines[index])
-
-        func_ref.lines[node.end_lineno-1].code_str += "*/"
+                                                      self.raw_lines[index-1])
+        func_ref.lines[node.end_lineno].code_str += "*/"
 
     # Imports
     def parse_Import(self, node, file_index, function_key, indent):
@@ -174,6 +174,7 @@ class PyAnalyzer():
 
         try:
             test_str = self.recurse_operator(node.test, file_index, function_key)[0]
+
         except ppex.TranslationNotSupported as ex:
             self.parse_unhandled(node, file_index, function_key, indent, ex.reason)
             return
@@ -188,7 +189,10 @@ class PyAnalyzer():
 
         self.analyze_tree(node.body, file_index, function_key, indent+1)
         # Get the last codeline and add the closing bracket
-        func_ref.lines[node.body[-1].lineno].code_str += "\n" + indent*cline.CPPCodeLine.tab_delimiter + "}"
+        func_ref.lines[node.body[-1].end_lineno].code_str += "\n" \
+                                                             + indent*cline.CPPCodeLine.tab_delimiter \
+                                                             + "}"
+
         if len(node.orelse) == 1 and node.orelse[0].__class__ is ast.If:
             # Else if case
             self.parse_If(node.orelse[0], file_index, function_key, indent,
@@ -206,7 +210,9 @@ class PyAnalyzer():
                                                             + "{")
             self.analyze_tree(node.orelse, file_index, function_key, indent + 1)
             # Get the last codeline and add the closing bracket
-            func_ref.lines[node.orelse[-1].lineno].code_str += "\n" + indent * cline.CPPCodeLine.tab_delimiter + "}"
+            func_ref.lines[node.orelse[-1].end_lineno].code_str += "\n" \
+                                                                   + indent * cline.CPPCodeLine.tab_delimiter \
+                                                                   + "}"
 
     def find_else_lineno(self, search_index):
         while search_index > -1:
@@ -235,7 +241,9 @@ class PyAnalyzer():
                                                         + indent * cline.CPPCodeLine.tab_delimiter
                                                         + "{")
         self.analyze_tree(node.body, file_index, function_key, indent + 1)
-        func_ref.lines[node.body[-1].lineno].code_str += "\n" + indent * cline.CPPCodeLine.tab_delimiter + "}"
+        func_ref.lines[node.body[-1].end_lineno].code_str += "\n" \
+                                                             + indent * cline.CPPCodeLine.tab_delimiter \
+                                                             + "}"
 
     def parse_Pass(self, node, file_index, function_key, indent):
         # We have nothing to do for a pass call
@@ -326,7 +334,8 @@ class PyAnalyzer():
         return_str = "/*\n"
         while doc_string.find("\n") > -1:
             doc_string = doc_string.lstrip()
-            return_str += cline.CPPCodeLine.tab_delimiter*indent + doc_string[:doc_string.find("\n")] + "\n"
+            return_str += cline.CPPCodeLine.tab_delimiter*indent \
+                          + doc_string[:doc_string.find("\n")] + "\n"
             doc_string = doc_string[doc_string.find("\n")+1:]
 
         doc_string = doc_string.lstrip()
@@ -368,7 +377,8 @@ class PyAnalyzer():
                                              file_index,
                                              function_key)
             # Verify types aren't changing or we aren't losing precision
-            if py_var_type[0] != assign_type[0] and (py_var_type[0] != "float" and assign_type[0] != "int"):
+            if py_var_type[0] != assign_type[0] \
+                    and (py_var_type[0] != "float" and assign_type[0] != "int"):
                 # Can't do changing types in C++
                 self.parse_unhandled(node, file_index, function_key, indent,
                                      "TODO: Refactor for C++. Variable types "
@@ -458,8 +468,8 @@ class PyAnalyzer():
             self.output_files[file_index].add_include_file("iostream")
 
         elif function == "sqrt":
-            if len(args) > 2:
-                raise ppex.TranslationNotSupported("TODO: Can't square more than 2 items")
+            if len(args) > 1:
+                raise ppex.TranslationNotSupported("TODO: Can't square more than 1 item")
             return_str = pf.sqrt_translation(args)
             return_type = ["float"]
             self.output_files[file_index].add_include_file("math.h")

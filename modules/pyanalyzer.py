@@ -103,15 +103,32 @@ class PyAnalyzer():
         :param int indent: Amount to indent code by
         """
         for node in tree:
-            # Using strategy found in ast.py built-in module
-            handler_name = "parse_" + node.__class__.__name__
-            # Will find if the function called handler_name exists, otherwise
-            # it returns parse_unhandled
-            handler = getattr(self, handler_name, self.parse_unhandled)
-            handler(node, file_index, function_key, indent)
+            # Skipping function definitions as we handled them during preanalysis
+            if node.__class__ is not ast.FunctionDef:
+                # Using strategy found in ast.py built-in module
+                handler_name = "parse_" + node.__class__.__name__
+                # Will find if the function called handler_name exists, otherwise
+                # it returns parse_unhandled
+                handler = getattr(self, handler_name, self.parse_unhandled)
+                handler(node, file_index, function_key, indent)
 
-    def parse_unhandled(self, node, file_index, function_key, indent):
-        pass
+    def parse_unhandled(self, node, file_index, function_key, indent,
+                        reason="TODO: Code not directly translatable, manual port required"):
+        func_ref = self.output_files[file_index].functions[function_key]
+        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
+                                                        node.lineno,
+                                                        node.end_col_offset,
+                                                        indent,
+                                                        "/*" + self.raw_lines[node.lineno-1],
+                                                        "", reason)
+        for index in range(node.lineno, node.end_lineno):
+            func_ref.lines[index] = cline.CPPCodeLine(index,
+                                                      index,
+                                                      node.end_col_offset,
+                                                      indent,
+                                                      self.raw_lines[index])
+
+        func_ref.lines[node.end_lineno].code_str += "*/"
 
     # Imports
     def parse_Import(self, node, file_index, function_key, indent):
@@ -194,7 +211,7 @@ class PyAnalyzer():
             else:
                 end_col_offset = self.raw_lines[search_index].find("else:")
                 if end_col_offset < 0:
-                    raise ppex.TranslationNotSupported()
+                    raise ppex.TranslationNotSupported("TODO: No corresponding else found")
                 else:
                     end_col_offset += 4
 
@@ -263,23 +280,27 @@ class PyAnalyzer():
                 if self.raw_lines[node.value.lineno-1].strip()[0:3] == '"""':
                     return_str = self.convert_docstring(node.value.value, indent)
                 else:
-                    self.parse_unhandled(node, file_index, function_key, indent)
+                    self.parse_unhandled(node, file_index, function_key, indent,
+                                         "TODO: Constant string not used")
                     return
             else:
-                self.parse_unhandled(node, file_index, function_key, indent)
+                self.parse_unhandled(node, file_index, function_key, indent,
+                                     "TODO: Constant not used")
                 return
 
         elif node.value.__class__ is ast.Call:
             try:
                 return_str, return_type = self.parse_Call(node.value, file_index, function_key)
-            except ppex.TranslationNotSupported:
-                self.parse_unhandled(node, file_index, function_key, indent)
+            except ppex.TranslationNotSupported as ex:
+                self.parse_unhandled(node, file_index, function_key, indent,
+                                     ex.reason)
                 return
             return_str += ";"
         else:
             # Any other type doesn't matter as the work it does wouldn't be
             # saved
-            self.parse_unhandled(node, file_index, function_key, indent)
+            self.parse_unhandled(node, file_index, function_key, indent,
+                                 "TODO: Value not assigned or used")
             return
 
         func_ref.lines[node.value.lineno] = cline.CPPCodeLine(node.value.lineno,
@@ -316,15 +337,17 @@ class PyAnalyzer():
 
         # Won't handle chained assignment
         if len(node.targets) > 1:
-            self.parse_unhandled(node, file_index, function_key, indent)
+            self.parse_unhandled(node, file_index, function_key, indent,
+                                 "TODO: Unable to translate chained assignment")
             return
         var_name = node.targets[0].id
         try:
             assign_str, assign_type = self.recurse_operator(node.value,
                                                             file_index,
                                                             function_key)
-        except ppex.TranslationNotSupported:
-            self.parse_unhandled(node, file_index, function_key, indent)
+        except ppex.TranslationNotSupported as ex:
+            self.parse_unhandled(node, file_index, function_key, indent,
+                                 ex.reason)
             return
 
         # Find if name exists in context
@@ -335,7 +358,10 @@ class PyAnalyzer():
             # Verify types aren't changing or we aren't losing precision
             if py_var_type[0] != assign_type[0] and (py_var_type[0] != "float" and assign_type[0] != "int"):
                 # Can't do changing types in C++
-                self.parse_unhandled(node, file_index, function_key, indent)
+                self.parse_unhandled(node, file_index, function_key, indent,
+                                     "TODO: Refactor for C++. Variable types "
+                                     "cannot change or potential loss of "
+                                     "precision occurred")
                 return
             else:
                 code_str = var_name + " = " + str(assign_str) + ";"
@@ -356,7 +382,7 @@ class PyAnalyzer():
     def parse_Call(self, node, file_index, function_key):
         # Should be a name to have a function call we can parse
         if node.func.__class__ is not ast.Name:
-            raise ppex.TranslationNotSupported()
+            raise ppex.TranslationNotSupported("TODO: Not a valid call")
 
         # Get a reference to current function to shorten code width
         func_ref = self.output_files[file_index].functions
@@ -366,7 +392,7 @@ class PyAnalyzer():
         if func_name not in cvar.CPPVariable.types \
             and func_name not in func_ref \
                 and func_name not in self.ported_functions:
-            raise ppex.TranslationNotSupported()
+            raise ppex.TranslationNotSupported("TODO: Call to function not in scope")
 
         # We track the types passed in to help update parameter types when
         # functions get called
@@ -404,7 +430,7 @@ class PyAnalyzer():
         elif func_name in self.ported_functions:
             return self.parse_ported_function(file_index, function_key, func_name, arg_list, arg_types)
         else:
-            raise ppex.TranslationNotSupported()
+            raise ppex.TranslationNotSupported("TODO: Call to function not in scope")
 
         # Finish generating function call with parameters inserted
         for arg in arg_list:
@@ -421,7 +447,7 @@ class PyAnalyzer():
 
         elif function == "sqrt":
             if len(args) > 2:
-                raise ppex.TranslationNotSupported()
+                raise ppex.TranslationNotSupported("TODO: Can't square more than 2 items")
             return_str = pf.sqrt_translation(args)
             return_type = ["float"]
             self.output_files[file_index].add_include_file("math.h")
@@ -459,7 +485,7 @@ class PyAnalyzer():
 
         # This shouldn't be possible normally, but we check to be safe
         if len(compare_nodes) < 2:
-            raise ppex.TranslationNotSupported()
+            raise ppex.TranslationNotSupported("TODO: Less than 2 items being compared")
 
         return_str = ""
         ret_var_type = compare_nodes[0][1][0]
@@ -570,7 +596,7 @@ class PyAnalyzer():
         """
         operator = node.op.__class__
         if operator.__name__ not in PyAnalyzer.operator_map:
-            raise ppex.TranslationNotSupported()
+            raise ppex.TranslationNotSupported("TODO: UnaryOp not supported")
 
         return_str, return_type = self.recurse_operator(node.operand,
                                                         file_index,
@@ -596,7 +622,7 @@ class PyAnalyzer():
         # Ensure we can do all types of operations present in code line
         for op in node.ops:
             if op.__class__.__name__ not in PyAnalyzer.comparison_map:
-                raise ppex.TranslationNotSupported()
+                raise ppex.TranslationNotSupported("TODO: Comparison operation not supported")
 
         # Comparisons can be chained, so we use the left item as the
         # "last" item to be compared to start the chain
@@ -660,7 +686,7 @@ class PyAnalyzer():
                                                    function_key)
             except ppex.VariableNotFound:
                 # Can't handle non declared variables being used
-                raise ppex.TranslationNotSupported()
+                raise ppex.TranslationNotSupported("TODO: Variable used before declaration")
 
         elif node_type is ast.Constant:
             return self.parse_Constant(node, file_index, function_key)

@@ -9,7 +9,8 @@ class TranslationNotSupported(PyPlusException):
     """
     Exception to indicate python code cannot be translated to C++
     """
-    pass
+    def __init__(self, reason="TODO: Code not directly translatable, manual port required"):
+        self.reason = reason
 
 
 class VariableNotFound(PyPlusException):

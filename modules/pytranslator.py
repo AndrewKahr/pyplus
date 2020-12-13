@@ -2,6 +2,7 @@ import ast
 from modules import cppfile as cfile
 from modules import cppfunction as cfun
 from modules import cppvariable as cvar
+from modules import cppcodeline as cline
 from modules import pyanalyzer
 
 
@@ -51,9 +52,75 @@ class PyTranslator():
             except IOError:
                 print("Error writing file: " + self.output_path
                       + file.filename + ".cpp")
+        print("Output written to " + self.output_path)
 
-    def ingest_comments(self):
-        pass
+    def ingest_comments(self, raw_lines):
+        # First get a dictionary with every existing line of code. That way
+        # we know whether to look for an inline comment or a full line comment
+        for file in self.output_files:
+            all_lines_dict = {}
+            for cfunction in file.functions.values():
+                # Source: https://stackoverflow.com/questions/38987/how-do-i
+                # -merge-two-dictionaries-in-a-single-expression-in-python
+                # -taking-union-o
+                all_lines_dict = {**all_lines_dict, **cfunction.lines}
+
+            # Going through all lines in the script we are parsing
+            for index in range(len(raw_lines)):
+                if (index+1) in all_lines_dict:
+                    # Looking for inline comment
+                    code_line = all_lines_dict[index+1]
+                    comment = raw_lines[index][code_line.end_char_index:].lstrip()
+
+                    # Verify there is a comment present
+                    if len(comment) > 0 and comment[0] == "#":
+                        # Trim off the comment symbol as it will be changed
+                        # to the C++ style comment
+                        all_lines_dict[index+1].comment_str = comment[1:].lstrip()
+
+                else:
+                    # Determine which function the line belongs to
+                    for function in file.functions.values():
+                        if function.lineno < index + 1 < function.end_lineno:
+                            line = raw_lines[index]
+                            comment = line.lstrip()
+                            if len(comment) > 0 and comment[0] == "#":
+                                comment = line.replace("#", "//", 1)
+                                function.lines[index + 1] = cline.CPPCodeLine(index + 1,
+                                                                              index + 1,
+                                                                              len(line),
+                                                                              0,
+                                                                              comment)
+                                break
+                    else:
+                        line = raw_lines[index]
+                        comment = line.lstrip()
+                        if len(comment) > 0 and comment[0] == "#":
+                            # We add an extra indent on code not in a function
+                            # since it will go into a function in C++
+                            comment = cline.CPPCodeLine.tab_delimiter + line.replace("#", "//", 1)
+                            file.functions["0"].lines[index + 1] = cline.CPPCodeLine(index + 1,
+                                                                                     index + 1,
+                                                                                     len(line),
+                                                                                     0,
+                                                                                     comment)
+        # Sort function line dictionaries so output is in proper order
+        for function in file.functions.values():
+            sorted_lines = {}
+            for line in sorted(function.lines.keys()):
+                sorted_lines[line] = function.lines[line]
+            function.lines = sorted_lines
+
+    def determine_indent(self, line):
+        tab_count = 0
+        space_count = 0
+        for char in line:
+            if char == " ":
+                space_count += 1
+            elif char == "\t":
+                space_count += 1
+            else:
+                return tab_count + space_count // 4
 
     def apply_variable_types(self):
         """
@@ -63,6 +130,10 @@ class PyTranslator():
         for file in self.output_files:
             for cfunction in file.functions.values():
                 for variable in cfunction.variables.values():
+                    # Need to include string library for strings in C++
+                    if variable.py_var_type[0] == "str":
+                        file.add_include_file("string")
+
                     # Prepend line with variable type to apply type
                     cfunction.lines[variable.line_num].code_str \
                         = cvar.CPPVariable.types[variable.py_var_type[0]] \
@@ -92,5 +163,5 @@ class PyTranslator():
         analyzer.analyze(tree.body, file_index, function_key, indent)
 
         self.apply_variable_types()
-        self.ingest_comments()
+        self.ingest_comments(all_lines)
         self.write_cpp_files()

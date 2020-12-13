@@ -1,16 +1,16 @@
-from modules import portedfunctions
+import modules
 
 
 def test_print_translation():
     args = ["Hello World"]
-    translated_print = portedfunctions.print_translation(args)
+    translated_print = modules.print_translation(args)
 
     assert translated_print == "std::cout << Hello World << std::endl"
 
 
 def test_sqrt_translation():
     args = ["1", "2"]
-    translated_sqrt = portedfunctions.sqrt_translation(args)
+    translated_sqrt = modules.sqrt_translation(args)
 
     assert translated_sqrt == "sqrt(1, 2)"
 

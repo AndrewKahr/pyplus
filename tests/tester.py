@@ -8,6 +8,7 @@ String
 print("hello")
 
 # Useful Comment Test
+string_var = str(1) + "2"
 print("hello2")
 boolean = True
 boolean2 = False

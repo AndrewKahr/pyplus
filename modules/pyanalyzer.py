@@ -383,8 +383,14 @@ class PyAnalyzer():
         if func_name in cvar.CPPVariable.types:
             # Trim the extra space since we are performing a cast rather than
             # a variable declaration
-            return_str = "(" + cvar.CPPVariable.types[func_name][:-1] + ")("
-            return_type = [func_name]
+            if (func_name == "str"):
+                return_str = "std::to_string("
+                self.output_files[file_index].add_include_file("string")
+                return_type = ["str"]
+            else:
+                return_str = "(" + cvar.CPPVariable.types[func_name][:-1] + ")("
+                return_type = [func_name]
+
         elif func_name in func_ref:
             return_str = func_name + "("
 

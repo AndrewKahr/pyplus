@@ -4,7 +4,7 @@ class CPPVariable():
     types = {
              "int": "int ", "float": "double ", "str": "std::string ",
              "bool": "bool ", "None": "NULL", "char **": "char **",
-             "void": "void ", "auto": "auto "
+             "void": "void ", "auto": "auto ", "NoneType": "void "
              }
 
     bool_map = { "True": "true", "False": "false"}

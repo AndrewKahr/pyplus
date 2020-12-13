@@ -21,4 +21,5 @@ def convert(script_path, output_path):
     translator.run()
 
 
-convert("../tests/tester.py", "../tests/output/")
+if __name__ == "__main__":
+    convert("examples/tester.py", "output/")

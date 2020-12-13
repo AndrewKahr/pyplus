@@ -9,7 +9,7 @@ from modules import portedfunctions as pf
 
 class PyAnalyzer():
     # Helps evaluate type when performing operations on different types
-    type_precedence_dict = {"string": 0, "float": 1, "int": 2, "bool": 3,
+    type_precedence_dict = {"str": 0, "float": 1, "int": 2, "bool": 3,
                             "auto": 8, "None": 9, "void": 9}
 
     # Python operators translated to C++ operators
@@ -22,7 +22,7 @@ class PyAnalyzer():
                     }
 
     # Tuple of all functions we have a special conversion from python to C++
-    ported_functions = ("print", "input", "sqrt")
+    ported_functions = ("print", "sqrt")
 
     # Python Comparison operators translated to C++ operators
     # We aren't able to do in/is checks easily, so they are excluded from the
@@ -115,12 +115,12 @@ class PyAnalyzer():
     def parse_unhandled(self, node, file_index, function_key, indent,
                         reason="TODO: Code not directly translatable, manual port required"):
         func_ref = self.output_files[file_index].functions[function_key]
-        func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
-                                                        node.lineno,
-                                                        node.end_col_offset,
-                                                        indent,
-                                                        "/*" + self.raw_lines[node.lineno-1],
-                                                        "", reason)
+        func_ref.lines[node.lineno-1] = cline.CPPCodeLine(node.lineno,
+                                                          node.lineno,
+                                                          node.end_col_offset,
+                                                          indent,
+                                                          "/*" + self.raw_lines[node.lineno-1],
+                                                          "", reason)
         for index in range(node.lineno, node.end_lineno):
             func_ref.lines[index] = cline.CPPCodeLine(index,
                                                       index,
@@ -128,7 +128,7 @@ class PyAnalyzer():
                                                       indent,
                                                       self.raw_lines[index])
 
-        func_ref.lines[node.end_lineno].code_str += "*/"
+        func_ref.lines[node.end_lineno-1].code_str += "*/"
 
     # Imports
     def parse_Import(self, node, file_index, function_key, indent):
@@ -171,7 +171,13 @@ class PyAnalyzer():
     def parse_If(self, node, file_index, function_key, indent, if_str="if"):
         # Parse conditions and add in the code to the current function
         func_ref = self.output_files[file_index].functions[function_key]
-        test_str = self.recurse_operator(node.test, file_index, function_key)[0]
+
+        try:
+            test_str = self.recurse_operator(node.test, file_index, function_key)[0]
+        except ppex.TranslationNotSupported as ex:
+            self.parse_unhandled(node, file_index, function_key, indent, ex.reason)
+            return
+
         func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
                                                         node.end_lineno,
                                                         node.end_col_offset,
@@ -259,9 +265,14 @@ class PyAnalyzer():
                                                             node.end_col_offset,
                                                             indent, "return;")
         else:
-            return_str, return_type = self.recurse_operator(node.value,
-                                                            file_index,
-                                                            function_key)
+            try:
+                return_str, return_type = self.recurse_operator(node.value,
+                                                                file_index,
+                                                                function_key)
+            except ppex.TranslationNotSupported as ex:
+                self.parse_unhandled(node, file_index, function_key, indent, ex.reason)
+                return
+
             func_ref.return_type = self.type_precedence(return_type, func_ref.return_type)
             func_ref.lines[node.lineno] = cline.CPPCodeLine(node.lineno,
                                                             node.end_lineno,
@@ -277,7 +288,8 @@ class PyAnalyzer():
         if node.value.__class__ is ast.Constant:
             if type(node.value.value) is str:
                 # Verify this is a docstring
-                if self.raw_lines[node.value.lineno-1].strip()[0:3] == '"""':
+                start_chars = self.raw_lines[node.value.lineno-1].strip()[0:3]
+                if start_chars == '"""' or start_chars == "'''":
                     return_str = self.convert_docstring(node.value.value, indent)
                 else:
                     self.parse_unhandled(node, file_index, function_key, indent,

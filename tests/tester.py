@@ -15,6 +15,7 @@ boolean2 = False
 b = int(5.4)
 int(5.4)
 x = 5
+x=5.1
 m = x
 q = 1 < 3
 v = 3 + x

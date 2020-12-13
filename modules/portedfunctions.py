@@ -2,11 +2,7 @@ def print_translation(args):
     """
     Parses calls to print to convert to the C++ equivalent
 
-    :param function_index: Index of the function this line should write to
-    :param file_index: Index of the file this line should write to
-    :param line: String representation of a line of code
-                 containing a print statement
-    :param indent: How much to indent a line by
+    :param list args: List of arguments to add to the print statement
     """
     return_str = "std::cout << "
     for arg in args[:-1]:

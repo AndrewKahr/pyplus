@@ -14,6 +14,7 @@ boolean = True
 boolean2 = False
 b = int(5.4)
 int(5.4)
+ls = [1,2,3]
 x = 5
 x=5.1
 m = x

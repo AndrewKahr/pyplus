@@ -332,8 +332,8 @@ class PyAnalyzer():
             py_var_type = self.find_var_type(var_name,
                                              file_index,
                                              function_key)
-            # Verify types aren't changing
-            if py_var_type[0] != assign_type[0]:
+            # Verify types aren't changing or we aren't losing precision
+            if py_var_type[0] != assign_type[0] and (py_var_type[0] != "float" and assign_type[0] != "int"):
                 # Can't do changing types in C++
                 self.parse_unhandled(node, file_index, function_key, indent)
                 return

@@ -10,10 +10,10 @@ def test_print_translation():
 
 
 def test_sqrt_translation():
-    args = ["1", "2"]
+    args = ["1"]
     translated_sqrt = pf.sqrt_translation(args)
 
-    assert translated_sqrt == "sqrt(1, 2)"
+    assert translated_sqrt == "sqrt(1)"
 
 
 def test_type_precedence_a():
@@ -54,9 +54,3 @@ def test_type_precedence_d():
     returned_type = analyzer.type_precedence(type_a, type_b)
 
     assert returned_type == type_a
-
-
-if __name__ == "__main__":
-    test_print_translation()
-    test_sqrt_translation()
-    test_type_precedence_c()

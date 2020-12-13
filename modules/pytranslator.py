@@ -1,8 +1,8 @@
+import ast
 from modules import cppfile as cfile
 from modules import cppfunction as cfun
 from modules import cppvariable as cvar
 from modules import pyanalyzer
-import ast
 
 
 class PyTranslator():
@@ -44,7 +44,6 @@ class PyTranslator():
         # Currently only one file, but this forms a basis to allow for multi-
         # file outputs from classes in C++
         for file in self.output_files:
-            # TODO: Error checking
             try:
                 f = open(self.output_path + file.filename + ".cpp", "w")
                 f.write(file.get_formatted_file_text())

@@ -356,9 +356,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (int, int)
-            Tuple containing the line number of the else statement and the
-            index of the last character of the else in the original python code
+        search_index : int
+            Line number of the else statement
+        end_col_offset : int
+            Index of the last character of the else in the original python code
 
         Raises
         ------
@@ -378,7 +379,8 @@ class PyAnalyzer():
                     end_col_offset += 4
 
                 # Line number is 1+index in list
-                return search_index + 1, end_col_offset
+                search_index += 1
+                return search_index, end_col_offset
 
     def parse_While(self, node, file_index, function_key, indent):
         """
@@ -700,9 +702,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the call and the return
-            type in a list of a string
+        return_str : str
+            The call represented as a string
+        return_type : list of str
+            The return type of the call
 
         Raises
         ------
@@ -791,9 +794,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the ported function and the
-            return type in a list of a string
+        return_str : str
+            The ported function represented as a string
+        return_type : list of str
+            The return type of the ported function
 
         Raises
         ------
@@ -829,21 +833,27 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the constant and the return
-            type in a list of a string
+        return_str : str
+            The constant value represented as a string
+        return_type : list of str
+            The type of the constant
         """
         # Strings need to be wrapped in quotes
         if type(node.value) is str:
-            return ("\"" + node.value + "\""), ["str"]
+            return_str = ("\"" + node.value + "\"")
+            return_type = ["str"]
 
         # Python booleans are capital while C++ is lowercase, so we need to
         # translate it
         elif type(node.value) is bool:
-            return cvar.CPPVariable.bool_map[str(node.value)], ["bool"]
+            return_str = cvar.CPPVariable.bool_map[str(node.value)]
+            return_type = ["bool"]
 
         else:
-            return str(node.value), [type(node.value).__name__]
+            return_str = str(node.value)
+            return_type = [type(node.value).__name__]
+
+        return return_str, return_type
 
     # Operators
     def parse_BoolOp(self, node, file_index, function_key):
@@ -861,9 +871,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the BoolOp and the return
-            type in a list of a string
+        return_str : str
+            The BoolOp represented as a string
+        return_type : list of str
+            The return type of the BoolOp
 
         Raises
         ------
@@ -906,7 +917,8 @@ class PyAnalyzer():
         else:
             return_type = compare_nodes[0][1]
 
-        return "(" + return_str + ")", return_type
+        return_str = "(" + return_str + ")"
+        return return_str, return_type
 
     def parse_BinOp(self, node, file_index, function_key):
         """
@@ -923,9 +935,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the BinOp and the return
-            type in a list of a string
+        return_str : str
+            The BinOp represented as a string
+        return_type : list of str
+            The return type of the BinOp
 
         Raises
         ------
@@ -945,32 +958,33 @@ class PyAnalyzer():
         if operator in PyAnalyzer.operator_map:
             if operator == "Pow":
                 self.output_files[file_index].add_include_file("math.h")
-                return_expr = "pow(" + left_str + ", " + right_str + ")"
+                return_str = "pow(" + left_str + ", " + right_str + ")"
                 return_type = ["float"]
 
             elif operator == "FloorDiv":
-                return_expr = left_str + " / " + right_str
+                return_str = left_str + " / " + right_str
                 # If they aren't both ints, we need to cast to int to truncate
                 if left_type[0] != "int" or right_type[0] != "int":
-                    return_expr = "(int)(" + return_expr + ")"
+                    return_str = "(int)(" + return_str + ")"
                 return_type = ["int"]
 
             elif operator == "Div":
-                return_expr = left_str + " / " + right_str
+                return_str = left_str + " / " + right_str
                 # We need to cast one to a double or it will perform integer
                 # math
                 if left_type[0] != "float" or right_type[0] != "float":
-                    return_expr = "(double)" + return_expr
+                    return_str = "(double)" + return_str
                 return_type = ["float"]
 
             else:
-                return_expr = left_str \
+                return_str = left_str \
                               + PyAnalyzer.operator_map[operator] \
                               + right_str
 
                 return_type = self.type_precedence(left_type, right_type)
 
-        return "(" + return_expr + ")", return_type
+        return_str = "(" + return_str + ")"
+        return return_str, return_type
 
     def type_precedence(self, type_a, type_b):
         """
@@ -987,7 +1001,7 @@ class PyAnalyzer():
 
         Returns
         -------
-        list of str
+        return_type : list of str
             The list that holds the type that should take precedence
         """
         if type_a[0] in PyAnalyzer.type_precedence_dict and type_b[0] in PyAnalyzer.type_precedence_dict:
@@ -1020,9 +1034,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the UnaryOp and the return
-            type in a list of a string
+        return_str : str
+            The UnaryOp represented as a string
+        return_type : list of str
+            The return type of the UnaryOp
 
         Raises
         ------
@@ -1039,11 +1054,12 @@ class PyAnalyzer():
 
         # Not operation becomes a bool no matter what type it operated on
         if operator is ast.Not:
-            return_type = "bool"
+            return_type = ["bool"]
         else:
-            return_type = "int"
+            return_type = ["int"]
 
-        return "(" + PyAnalyzer.operator_map[operator.__name__] + return_str + ")", [return_type]
+        return_str = "(" + PyAnalyzer.operator_map[operator.__name__] + return_str + ")"
+        return return_str, return_type
 
     def parse_Compare(self, node, file_index, function_key):
         """
@@ -1060,9 +1076,10 @@ class PyAnalyzer():
 
         Returns
         -------
-        tuple : (str, [str])
-            Tuple with the string representation of the comparison and the
-            return type in a list of a string
+        return_str : str
+            The Compare operation represented as a string
+        return_type : list of str
+            The return type of the Compare operation
 
         Raises
         ------
@@ -1101,7 +1118,9 @@ class PyAnalyzer():
                       PyAnalyzer.comparison_map[node.ops[-1].__class__.__name__] \
                       + comparator + ")"
 
-        return return_str, ["bool"]
+        # All comparisons come back as a bool
+        return_type = ["bool"]
+        return return_str, return_type
 
     def recurse_operator(self, node, file_index, function_key):
         """

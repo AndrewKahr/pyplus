@@ -7,27 +7,33 @@ from modules import pyanalyzer
 
 
 class PyTranslator():
+    """
+    This class orchestrates launching the analysis on the script and writing the analysis output
+    to a usable C++ file
+    """
+
     def __init__(self, script_path, output_path):
         """
         Constructor of a python to C++ translator. This will automatically
         create a main.cpp and main function for code
 
-        :param script_path: The string representation of the path to the file
-                            to be converted
-        :param output_path: The string representation of the path to the
-                            directory where the final file should be written
+        Parameters
+        ----------
+        script_path : str
+            Path to the python file to be converted
+        output_path : str
+            Path to the directory where the output file should be written
         """
+
         self.script_path = script_path
 
         self.output_path = output_path
-
-        # Tracks if we are currently parsing a line within a doc comment
-        self.in_doc_comment = False
 
         # Configuring Default Main Function code
         self.output_files = [cfile.CPPFile("main")]
         main_params = {"argc": cvar.CPPVariable("argc", -1, ["int"]),
                        "argv": cvar.CPPVariable("argv", -1, ["char **"])}
+
         # We name the function 0 because that is an invalid name in python
         # Otherwise theres a chance theres a function named main already
         # At file output, this will be changed to main
@@ -38,7 +44,7 @@ class PyTranslator():
 
     def write_cpp_files(self):
         """
-        This goes through the process of converting the object representations
+        This performs the process of converting the object representations
         of the code into usable strings and writes them to the appropriate
         output file
         """
@@ -55,6 +61,16 @@ class PyTranslator():
         print("Output written to " + self.output_path)
 
     def ingest_comments(self, raw_lines):
+        """
+        Pulls comments from the original script, converts them to C++ style comments, then puts them
+        into line dictionaries of their corresponding function so they are included during the
+        output phase
+
+        Parameters
+        ----------
+        raw_lines : list of str
+            List of strings containing the original python script line by line
+        """
         # First get a dictionary with every existing line of code. That way
         # we know whether to look for an inline comment or a full line comment
         for file in self.output_files:
@@ -67,6 +83,7 @@ class PyTranslator():
 
             # Going through all lines in the script we are parsing
             for index in range(len(raw_lines)):
+                # Line numbers count from 1 while list starts from 0, so we need to offset by 1
                 if (index+1) in all_lines_dict:
                     # Looking for inline comment
                     code_line = all_lines_dict[index+1]
@@ -85,6 +102,7 @@ class PyTranslator():
                             line = raw_lines[index]
                             comment = line.lstrip()
                             if len(comment) > 0 and comment[0] == "#":
+                                # C++ uses '//' to indicate comments instead of '#'
                                 comment = line.replace("#", "//", 1)
                                 function.lines[index + 1] = cline.CPPCodeLine(index + 1,
                                                                               index + 1,
@@ -104,23 +122,13 @@ class PyTranslator():
                                                                                      len(line),
                                                                                      0,
                                                                                      comment)
+
         # Sort function line dictionaries so output is in proper order
         for function in file.functions.values():
             sorted_lines = {}
             for line in sorted(function.lines.keys()):
                 sorted_lines[line] = function.lines[line]
             function.lines = sorted_lines
-
-    def determine_indent(self, line):
-        tab_count = 0
-        space_count = 0
-        for char in line:
-            if char == " ":
-                space_count += 1
-            elif char == "\t":
-                space_count += 1
-            else:
-                return tab_count + space_count // 4
 
     def apply_variable_types(self):
         """

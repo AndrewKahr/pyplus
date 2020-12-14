@@ -7,8 +7,12 @@ def convert(script_path, output_path):
     The entry point of the translator. Call this function to translate a
     python script to C++
 
-    :param script_path: The relative path to the script to convert
-    :param output_path: The relative path to the directory to output to
+    Parameters
+    ----------
+    script_path : str
+        The relative path to the script to convert
+    output_path : str
+        The relative path to the directory to output to
     """
 
     # Reference for getting absolute path of relative path file

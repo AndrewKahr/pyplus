@@ -1,17 +1,24 @@
 from modules import cppvariable as cvar
 
 class CPPFunction():
+    """
+    Class to represent Python functions as C++ functions
+    """
 
     def __init__(self, name, lineno, end_lineno, parameters={}):
         """
-        Represents a C++ function
+        Constructs a CPPFunction object
 
-        :param str name: The name of the function
-        :param int lineno: The line where the function is declared in the
-                           python file
-        :param int end_lineno: The line where the function ends in the python
-                               file
-        :param dict parameters: The parameters this function has passed in
+        Parameters
+        ----------
+        name : str
+            The name of the function
+        lineno : int
+            The line where the function is declared in the python file
+        end_lineno : int
+            The line where the function ends in the python file
+        parameters : dict of {str: CPPVariable}
+            The parameters this function has passed in
         """
         self.name = name
 
@@ -28,8 +35,8 @@ class CPPFunction():
         self.parameters = parameters
 
         # Lines in a function stored as a dictionary of format
-        # {LineNumber : CPPCodeLine} where line number is the line number
-        # in the python script
+        # {LineNumber : CPPCodeLine} where line number is an int of the line
+        # number in the python script
         self.lines = {}
 
         # Provides a lookup table for variables declared in the scope,
@@ -47,7 +54,10 @@ class CPPFunction():
         declaration. This is separate from get signature because we don't
         want to include any default values in the forward declaration
 
-        :return string: The function's forward declaration
+        Returns
+        -------
+        str
+            The function's forward declaration
         """
         function_signature = cvar.CPPVariable.types[self.return_type[0]]
         function_signature += self.name + "("
@@ -64,10 +74,13 @@ class CPPFunction():
         """
         Generates the string representation of this function's signature
 
-        :return string: The function's signature
+        Returns
+        -------
+        str
+            The function's signature
         """
         function_signature = cvar.CPPVariable.types[self.return_type[0]]
-        # Convert internally specially named main function to proper name
+        # Convert internally named main function to proper name
         if self.name == "0":
             function_signature += "main("
         else:
@@ -79,6 +92,7 @@ class CPPFunction():
                 # Prepend the param type in C++ style before the param name
                 function_signature += cvar.CPPVariable.types[parameter.py_var_type[0]]
                 function_signature += parameter.name + ", "
+
             # Remove the extra comma and space
             function_signature = function_signature[:-2]
 

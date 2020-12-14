@@ -1,14 +1,17 @@
 class CPPFile():
+    """
+    Class to represent a C++ file that will be exported
+    """
 
     def __init__(self, filename):
         """
-        Represents a file to be exported
-        Holds a list of includes to be written at the top of the file and a
-        list of functions to be written after the includes
+        Constructs a CPPFile object
 
-        :param filename: name to be given to the file
+        Parameters
+        ----------
+        filename : str
+            Name for the file
         """
-
         # Includes are just strings of name of include file
         self.includes = []
 
@@ -22,7 +25,10 @@ class CPPFile():
         Adds the provided include file to the current cpp file if it doesn't
         already exist
 
-        :param str file: Name of the include file to add
+        Parameters
+        ----------
+        file : str
+            Name of the include file to add
         """
         if file not in self.includes:
             self.includes.append(file)
@@ -31,7 +37,10 @@ class CPPFile():
         """
         Generates the text representing the entire C++ file
 
-        :return: A string holding all of the text of the C++ file
+        Returns
+        -------
+        return_str : str
+            The text of the converted C++ file
         """
         return_str = ""
 

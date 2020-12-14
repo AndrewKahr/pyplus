@@ -1,4 +1,8 @@
 class CPPVariable():
+    """
+    This class represents a variable, holding information about it to be used
+    while outputting to the C++ file
+    """
 
     # Using redundant mapping to allow for changes to mapped type
     types = {
@@ -7,22 +11,21 @@ class CPPVariable():
              "void": "void ", "auto": "auto ", "NoneType": "void "
              }
 
-    bool_map = { "True": "true", "False": "false"}
+    # Python uses capital letters while C++ uses lowercase
+    bool_map = {"True": "true", "False": "false"}
 
-    def __init__(self, name, line_num, py_var_type, list_dims=0,
-                 is_list=False, list_type=""):
+    def __init__(self, name, line_num, py_var_type):
         """
-        Represents a C++ variable converted from python
+        Constructs a C++ variable object representation converted from python
 
-        :param str name: Name of the variable
-        :param int line_num: line number this variable was assigned on in
-                             python
-        :param list py_var_type: The type of the variable in python
-        :param int list_dims: How many dimensions the list is, only applicable
-                              if the variable is of a list type
-        :param bool is_list: Flag to easily determine if this variable is a
-                             list
-        :param str list_type: The type of values held within the list
+        Parameters
+        ----------
+        name : str
+            The name of the variable
+        line_num : int
+            The line number this variable was declared on in python
+        py_var_type : list of str
+            The type of the variable in python
         """
         self.name = name
 
@@ -31,9 +34,3 @@ class CPPVariable():
         # We use a list here to get a mutable type so that a change to one
         # linked variable will reflect the change across all objects
         self.py_var_type = py_var_type
-
-        self.is_list = is_list
-
-        # To account for recursive lists made of lists
-        self.list_dims = list_dims
-        self.list_type = list_type

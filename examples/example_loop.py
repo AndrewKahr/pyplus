@@ -13,5 +13,5 @@ while True:
         break
     else:
         print(index)
-        index = index + 1
+        index = index + 1   # increment index to avoid infinite loop
         continue
